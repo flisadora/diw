@@ -3,7 +3,7 @@
     <head>
         <!-- Latest compiled and minified CSS -->
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-        <title>Google API</title>
+        <title>DIW - Google API</title>
 
         <style>
             body {
@@ -14,31 +14,45 @@
                 min-height: 400px;
             }
             header {
-                font-size: 50px;
+                font-size: 40px;
                 text-align: center;
+                padding: 30px;
+            }
+            .destino {
+                padding-top: 15px;
             }
         </style>
         <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
         <script>
-            var map; 
-            function submitForm(){
-                var configAjaxMaps = {
-                    url: 'https://maps.googleapis.com/maps/api/geocode/json',
-                    data: {
-                        address: document.getElementById('localidadeInput').value,
-                        key: 'AIzaSyDLzweGeeB1vUXYqB-hR2Uk3_i9fbF3EuA'
-                    },
-                    success: function(data){
+            
+            var directionsDisplay;
+            var directionsService = new google.maps.DirectionsService();
+            var map;
 
-                        var lat = data.results[0].geometry.location.lat;
-                        var long = data.results[0].geometry.location.lng;
-                        var myCenter = new google.maps.LatLng(lat, long);
-                        var marker = new google.maps.Marker({position: myCenter, });
-                        marker.setMap(map);                        
-                        map.setCenter (myCenter);
-                    }
-                };
-                $.ajax(configAjaxMaps);
+            function initMap() {
+              directionsDisplay = new google.maps.DirectionsRenderer();
+              var inicio = new google.maps.LatLng(-19.912998, -43.940933);
+              var mapOptions = {
+                zoom:7,
+                center: inicio
+              }
+              map = new google.maps.Map(document.getElementById('map'), mapOptions);
+              directionsDisplay.setMap(map);
+            }
+
+            function calcRoute() {
+              var start = document.getElementById('start').value;
+              var end = document.getElementById('end').value;
+              var request = {
+                origin: start,
+                destination: end,
+                travelMode: 'DRIVING'
+              };
+              directionsService.route(request, function(result, status) {
+                if (status == 'OK') {
+                  directionsDisplay.setDirections(result);
+                }
+              });
             }
         </script>
     </head>
@@ -47,31 +61,31 @@
                 
         <div class="container-fluid">
             <div class="row">
-                <header class="col-md-12" id="header">BUSCA LOCALIDADE</header>
+                <header class="col-md-12">Busca de Rotas</header>
             </div>
-        
+
             <div class="row">
                 <div class="col-md-4">
-                  <div class="form-group">
-                    <label for="localidadeInput">Local</label>
-                    <input type="text" class="form-control" id="localidadeInput">
-                  </div>
-                  <button class="btn btn-lg btn-default" onclick="submitForm()">Buscar</button>
+                    <div class="well well-lg">
+                        <div class="form-group">
+                            <div class="origem">
+                                <label for="origemInput">Origem:</label>
+                                <input type="text" class="form-control" id="start">
+                            </div>
+                            <div class="destino">
+                                <label for="destinoInput">Destino:</label>
+                                <input type="text" class="form-control" id="end">
+                            </div>
+                        </div>
+                        <button class="btn btn-md btn-success" onclick="calcRoute()">Buscar </button>
+                        <div></div>
+                    </div>
                 </div>
                 <div class="col-md-8">
                     <div id="map"></div>
                 </div>
             </div>
         </div>
-        
-        <script>
-          function initMap() {
-            map = new google.maps.Map(document.getElementById('map'), {
-              zoom: 8,
-              center: {lat: -34.397, lng: 150.644}
-                });
-            }   
-        </script>
         <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLzweGeeB1vUXYqB-hR2Uk3_i9fbF3EuA&callback=initMap">
         </script>
