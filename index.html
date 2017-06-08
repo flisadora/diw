@@ -1,94 +1,167 @@
 <!DOCTYPE>
 <html lan="en">
-    <head>
-        <!-- Latest compiled and minified CSS -->
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-        <title>DIW - Google API</title>
+	<head>
+		<title>DIW - Google API</title>
+		<!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+		<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLzweGeeB1vUXYqB-hR2Uk3_i9fbF3EuA&libraries=places&callback=initMap"></script>
+		<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+		<style>
+			body {
+				background-color: lightgray;
+				font-family: Verdana, Geneva, Tahoma, sans-serif;
+			}
+			#map {
+				min-height: 400px;
+			}
+			header {
+				font-size: 40px;
+				text-align: center;
+				padding: 30px;
+			}
+			.destino {
+				padding-top: 15px;
+			}
+		</style>
+		<script>
+			var directionsDisplay, directionsService, map, infowindow, places = [];
 
-        <style>
-            body {
-                background-color: lightgray;
-                font-family: Verdana, Geneva, Tahoma, sans-serif;
-            }
-            #map {
-                min-height: 400px;
-            }
-            header {
-                font-size: 40px;
-                text-align: center;
-                padding: 30px;
-            }
-            .destino {
-                padding-top: 15px;
-            }
-        </style>
-        <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-        <script>
-            
-            var directionsDisplay;
-            var directionsService = new google.maps.DirectionsService();
-            var map;
+			function initMap() {
+				if (directionsService) return;
+				directionsService = new google.maps.DirectionsService();
+				directionsDisplay = new google.maps.DirectionsRenderer();
+				var inicio = new google.maps.LatLng(-19.912998, -43.940933);
+				var mapOptions = {
+					zoom:7,
+					center: inicio
+				}
+				map = new google.maps.Map(document.getElementById('map'), mapOptions);
+				directionsDisplay.setMap(map);
+				infowindow = new google.maps.InfoWindow();
+			}
 
-            function initMap() {
-              directionsDisplay = new google.maps.DirectionsRenderer();
-              var inicio = new google.maps.LatLng(-19.912998, -43.940933);
-              var mapOptions = {
-                zoom:7,
-                center: inicio
-              }
-              map = new google.maps.Map(document.getElementById('map'), mapOptions);
-              directionsDisplay.setMap(map);
-            }
+			function addLocal() {
+				let service = new google.maps.places.PlacesService(map);
+				service.textSearch({ query: document.getElementById('search').value }, function (results, status) {
+					if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+						createMarker(results[0]);
+						addLocalToList(results[0]);
+					}
+				});
+			}
 
-            function calcRoute() {
-              var start = document.getElementById('start').value;
-              var end = document.getElementById('end').value;
-              var request = {
-                origin: start,
-                destination: end,
-                travelMode: 'DRIVING'
-              };
-              directionsService.route(request, function(result, status) {
-                if (status == 'OK') {
-                  directionsDisplay.setDirections(result);
-                }
-              });
-            }
-        </script>
-    </head>
-    
-    <body>
-                
-        <div class="container-fluid">
-            <div class="row">
-                <header class="col-md-12">Busca de Rotas</header>
-            </div>
+			function calcRoute() {
+				var start = document.getElementById('start').value;
+				var end = document.getElementById('end').value;
+				_calcRoute(start, end);
+			}
 
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="well well-lg">
-                        <div class="form-group">
-                            <div class="origem">
-                                <label for="origemInput">Origem:</label>
-                                <input type="text" class="form-control" id="start">
-                            </div>
-                            <div class="destino">
-                                <label for="destinoInput">Destino:</label>
-                                <input type="text" class="form-control" id="end">
-                            </div>
-                        </div>
-                        <button class="btn btn-md btn-success" onclick="calcRoute()">Buscar </button>
-                        <div></div>
-                    </div>
-                </div>
-                <div class="col-md-8">
-                    <div id="map"></div>
-                </div>
-            </div>
-        </div>
-        <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDLzweGeeB1vUXYqB-hR2Uk3_i9fbF3EuA&callback=initMap">
-        </script>
-        
-    </body>
+			function _calcRoute(start, end) {
+				var request = {
+					origin: start,
+					destination: end,
+					travelMode: 'DRIVING'
+				};
+				directionsService.route(request, setDirections);
+			}
+
+			function createMarker(place) {
+				var placeLoc = place.geometry.location;
+				var marker = new google.maps.Marker({
+					map: map,
+					position: place.geometry.location
+				});
+
+				google.maps.event.addListener(marker, 'click', function() {
+					infowindow.setContent(place.name);
+					infowindow.open(map, this);
+				});
+			}
+
+			function addLocalToList(place) {
+				let localCheckbox = $(
+					'<div class="checkbox">' +
+						'<input type="checkbox">' + place.name + 
+					'</div>'
+				);
+				places.push(place);
+				$(".lista-locais").append($(localCheckbox));
+			}
+
+			function drawRoutes() {
+				let checkedPlaces = $(".lista-locais .checkbox input:checked");
+				if (checkedPlaces.length != 2) { alert("Selecione dois locais!"); return; }
+
+				let placesToDraw = [];
+				checkedPlaces.each((idx, e) => placesToDraw.push(places.find(p => p.name == $(e).parent().text()).formatted_address));
+
+				_calcRoute(...placesToDraw);
+			}
+
+			function setDirections (result, status) {
+				if (status == google.maps.places.PlacesServiceStatus.OK)
+					directionsDisplay.setDirections(result);
+			}
+		</script>
+	</head>
+	
+	<body>
+				
+		<div class="container-fluid">
+			<div class="row">
+				<header class="col-md-12">Busca de Rotas</header>
+			</div>
+
+			<div class="row">
+				<div class="col-md-4">
+					<div class="well well-lg">
+						<div class="form-group">
+							<div class="pesquisa">
+								<label for="pesquisaInput">Pesquise um local:</label>
+								<input type="text" class="form-control" id="search">
+							</div>
+						</div>
+						<button class="btn btn-md btn-success" onclick="addLocal()">Pesquisar </button>
+						<div></div>
+					</div>
+				</div>
+				<div class="col-md-8">
+					<div id="map"></div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-4">
+					<div class="well well-lg">
+						<div class="form-group">
+							<div class="lista-locais">
+								<label for="lista">Lista de locais:</label>
+							</div>
+						</div>
+						<button class="btn btn-md btn-success" onclick="drawRoutes()">Desenhar Rotas </button>
+						<div></div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-4">
+					<div class="well well-lg">
+						<div class="form-group">
+							<div class="origem">
+								<label for="origemInput">Origem:</label>
+								<input type="text" class="form-control" id="start">
+							</div>
+							<div class="destino">
+								<label for="destinoInput">Destino:</label>
+								<input type="text" class="form-control" id="end">
+							</div>
+						</div>
+						<button class="btn btn-md btn-success" onclick="calcRoute()">Buscar </button>
+						<div></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
 </html>
